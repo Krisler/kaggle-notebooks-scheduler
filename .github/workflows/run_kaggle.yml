@@ -39,7 +39,7 @@ jobs:
           kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
 
           echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR --run
+          kaggle kernels push -p $WORKDIR
 
           echo "Polling for completion..."
           STATUS=""
@@ -77,7 +77,7 @@ jobs:
           kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
 
           echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR --run
+          kaggle kernels push -p $WORKDIR
 
           echo "Polling for completion..."
           STATUS=""
