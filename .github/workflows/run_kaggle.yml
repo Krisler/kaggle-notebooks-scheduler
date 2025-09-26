@@ -43,7 +43,7 @@ jobs:
 
           echo "Polling for completion..."
           STATUS=""
-          while [[ "$STATUS" != "complete" ]]; do
+          while [[ "$STATUS" != *"complete"* ]]; do
             STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
             echo "Current status: $STATUS"
             if [[ "$STATUS" == "error" ]]; then
@@ -81,7 +81,7 @@ jobs:
 
           echo "Polling for completion..."
           STATUS=""
-          while [[ "$STATUS" != "complete" ]]; do
+          while [[ "$STATUS" != *"complete"* ]]; do
             STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
             echo "Current status: $STATUS"
             if [[ "$STATUS" == "error" ]]; then
