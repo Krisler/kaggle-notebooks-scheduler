@@ -44,7 +44,7 @@ jobs:
           echo "Polling for completion..."
           STATUS=""
           while [[ "$STATUS" != "complete" ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID --json | jq -r '.[0].status')
+            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | awk '{print $2}')
             echo "Current status: $STATUS"
             if [[ "$STATUS" == "error" ]]; then
               echo "Notebook failed!"
@@ -82,7 +82,7 @@ jobs:
           echo "Polling for completion..."
           STATUS=""
           while [[ "$STATUS" != "complete" ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID --json | jq -r '.[0].status')
+            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | awk '{print $2}')
             echo "Current status: $STATUS"
             if [[ "$STATUS" == "error" ]]; then
               echo "Notebook failed!"
