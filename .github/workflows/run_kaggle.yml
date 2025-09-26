@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Kaggle API
         run: |
@@ -28,7 +28,7 @@ jobs:
       - name: Run CanStockAnal Notebook
         id: canstockanal
         run: |
-          NOTEBOOK_ID="wendellsatney/canstockanal"
+          NOTEBOOK_ID="krisler/canstockanal"
           echo "Triggering $NOTEBOOK_ID..."
           kaggle kernels push --id $NOTEBOOK_ID
 
@@ -49,7 +49,7 @@ jobs:
           kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/CanStockAnal
 
       - name: Upload CanStockAnal Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: CanStockAnal-outputs
           path: ./kaggle_outputs/CanStockAnal
@@ -78,7 +78,7 @@ jobs:
           kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/StockAnal
 
       - name: Upload StockAnal Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: StockAnal-outputs
           path: ./kaggle_outputs/StockAnal
