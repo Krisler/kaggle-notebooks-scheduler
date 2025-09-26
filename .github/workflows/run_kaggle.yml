@@ -28,7 +28,7 @@ jobs:
       - name: Run CanStockAnal Notebook
         id: canstockanal
         run: |
-          NOTEBOOK_ID="wendellsatney/CanStockAnal"
+          NOTEBOOK_ID="krisler/canstockanal"
           echo "Triggering $NOTEBOOK_ID..."
           kaggle kernels push --id $NOTEBOOK_ID
 
@@ -57,7 +57,7 @@ jobs:
       - name: Run StockAnal Notebook
         id: stockanal
         run: |
-          NOTEBOOK_ID="wendellsatney/StockAnal"
+          NOTEBOOK_ID="krisler/stockanal"
           echo "Triggering $NOTEBOOK_ID..."
           kaggle kernels push --id $NOTEBOOK_ID
 
