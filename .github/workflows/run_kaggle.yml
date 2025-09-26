@@ -22,7 +22,7 @@ jobs:
 
       - name: Install Kaggle CLI & jq
         run: |
-          pip install kaggle --upgrade
+          pip install --upgrade kaggle
           sudo apt-get update && sudo apt-get install -y jq
 
       - name: Run CanStockAnal Notebook
@@ -31,11 +31,15 @@ jobs:
           NOTEBOOK_ID="krisler/canstockanal"
           WORKDIR="./canstockanal"
 
+          echo "Cleaning old workdir..."
+          rm -rf $WORKDIR
+          mkdir -p $WORKDIR
+
           echo "Pulling latest $NOTEBOOK_ID..."
-          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --force
+          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
 
           echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR
+          kaggle kernels push -p $WORKDIR --run
 
           echo "Polling for completion..."
           STATUS=""
@@ -65,11 +69,15 @@ jobs:
           NOTEBOOK_ID="krisler/stockanal"
           WORKDIR="./stockanal"
 
+          echo "Cleaning old workdir..."
+          rm -rf $WORKDIR
+          mkdir -p $WORKDIR
+
           echo "Pulling latest $NOTEBOOK_ID..."
-          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --force
+          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
 
           echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR
+          kaggle kernels push -p $WORKDIR --run
 
           echo "Polling for completion..."
           STATUS=""
