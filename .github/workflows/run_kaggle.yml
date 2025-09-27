@@ -3,7 +3,7 @@ name: Run Kaggle Notebooks Daily
 on:
   schedule:
     # 1:30 PM PST = 20:30 UTC (DST)
-    - cron: "30 22 * * *"
+    - cron: "30 22 * * 1-5"
   workflow_dispatch: # manual trigger
 
 jobs:
