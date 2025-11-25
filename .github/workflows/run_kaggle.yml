@@ -25,44 +25,6 @@ jobs:
           pip install --upgrade kaggle
           sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Run CanStockAnal Notebook
-        id: canstockanal
-        run: |
-          NOTEBOOK_ID="krisler/canstockanal"
-          WORKDIR="./canstockanal"
-
-          echo "Cleaning old workdir..."
-          rm -rf $WORKDIR
-          mkdir -p $WORKDIR
-
-          echo "Pulling latest $NOTEBOOK_ID..."
-          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
-
-          echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR
-
-          echo "Polling for completion..."
-          STATUS=""
-          while [[ "$STATUS" != *"complete"* ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
-            echo "Current status: $STATUS"
-            if [[ "$STATUS" == *"error"* ]]; then
-              echo "Notebook failed!"
-              exit 1
-            fi
-            sleep 60
-          done
-
-          echo "Notebook finished. Downloading outputs..."
-          mkdir -p ./kaggle_outputs/CanStockAnal
-          kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/CanStockAnal
-
-      - name: Upload CanStockAnal Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CanStockAnal-outputs
-          path: ./kaggle_outputs/CanStockAnal
-
       - name: Run StockAnal Notebook
         id: stockanal
         run: |
