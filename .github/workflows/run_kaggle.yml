@@ -2,9 +2,8 @@ name: Run Kaggle Notebooks Daily
 
 on:
   schedule:
-    # 9:00 PM PST = 4:00 UTC (DST)
     - cron: "0 4 * * 2-6"
-  workflow_dispatch: # manual trigger
+  workflow_dispatch:
 
 jobs:
   run-notebooks:
@@ -15,10 +14,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Kaggle API
+        shell: bash
         run: |
           mkdir -p ~/.kaggle
-          echo '${{ secrets.KAGGLE_JSON }}' > ~/.kaggle/kaggle.json
+          echo "${{ secrets.KAGGLE_JSON }}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
+          echo "Kaggle JSON created:"
+          cat ~/.kaggle/kaggle.json
 
       - name: Install Kaggle CLI & jq
         run: |
@@ -44,12 +46,16 @@ jobs:
           echo "Polling for completion..."
           STATUS=""
           while [[ "$STATUS" != *"complete"* ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
+            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" \
+              | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
+
             echo "Current status: $STATUS"
+
             if [[ "$STATUS" == *"error"* ]]; then
               echo "Notebook failed!"
               exit 1
             fi
+
             sleep 60
           done
 
