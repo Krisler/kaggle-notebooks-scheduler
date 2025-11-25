@@ -4,31 +4,29 @@ on:
   schedule:
     # 9:00 PM PST = 4:00 UTC (DST)
     - cron: "0 4 * * 2-6"
-  workflow_dispatch:
+  workflow_dispatch: # manual trigger
 
 jobs:
   run-notebooks:
     runs-on: ubuntu-latest
 
     steps:
-      # ----------------------------
-      # Step 1: Checkout the repo
-      # ----------------------------
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # ----------------------------
-      # Step 2: Install Kaggle CLI & jq
-      # ----------------------------
+      - name: Setup Kaggle API
+        run: |
+          mkdir -p ~/.kaggle
+          echo '${{ secrets.KAGGLE_JSON }}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
       - name: Install Kaggle CLI & jq
         run: |
           pip install --upgrade kaggle
           sudo apt-get update && sudo apt-get install -y jq
 
-      # ----------------------------
-      # Step 3: Pull, push, and run the kernel
-      # ----------------------------
       - name: Run StockAnal Notebook
+        id: stockanal
         run: |
           NOTEBOOK_ID="krisler/stockanal"
           WORKDIR="./stockanal"
@@ -46,21 +44,12 @@ jobs:
           echo "Polling for completion..."
           STATUS=""
           while [[ "$STATUS" != *"complete"* ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" \
-              | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
+            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
             echo "Current status: $STATUS"
-
             if [[ "$STATUS" == *"error"* ]]; then
-              echo "Notebook failed! Fetching kernel logs..."
-
-              # Download kernel output and logs for debugging
-              mkdir -p ./kaggle_outputs/StockAnal
-              kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/StockAnal
-              
-              echo "Check ./kaggle_outputs/StockAnal for logs"
+              echo "Notebook failed!"
               exit 1
             fi
-
             sleep 60
           done
 
@@ -68,9 +57,6 @@ jobs:
           mkdir -p ./kaggle_outputs/StockAnal
           kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/StockAnal
 
-      # ----------------------------
-      # Step 4: Upload outputs as artifact
-      # ----------------------------
       - name: Upload StockAnal Artifact
         uses: actions/upload-artifact@v4
         with:
