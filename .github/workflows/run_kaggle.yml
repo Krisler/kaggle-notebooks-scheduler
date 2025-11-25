@@ -2,57 +2,63 @@ name: Run Kaggle Notebooks Daily
 
 on:
   schedule:
-    - cron: "0 4 * * 2-6"  # 9:00 PM PST = 4:00 UTC
-  workflow_dispatch:
+    # 9:00 PM PST = 4:00 UTC (DST)
+    - cron: "0 4 * * 2-6"
+  workflow_dispatch: # manual trigger
 
 jobs:
   run-notebooks:
     runs-on: ubuntu-latest
-    env:
-      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # 2️⃣ Debug: list files to verify notebook path
-      - name: List repo files
-        run: ls -R
-
-      # 3️⃣ Setup Python & dependencies
-      - name: Setup Python & Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install --upgrade kaggle papermill nbformat
-
-      # 4️⃣ Setup Kaggle credentials
-      - name: Setup Kaggle JSON
+      - name: Setup Kaggle API
         run: |
           mkdir -p ~/.kaggle
-          echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+          echo '${{ secrets.KAGGLE_JSON }}' > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-          echo "Kaggle JSON contents:"
-          cat ~/.kaggle/kaggle.json
 
-      # 5️⃣ Run the notebook using Papermill
-      - name: Run StockAnal Notebook
+      - name: Install Kaggle CLI & jq
         run: |
-          mkdir -p ./output
-          NOTEBOOK_PATH="./StockAnal.ipynb"  # Update if your notebook is in a subfolder
-          OUTPUT_PATH="./output/StockAnal_output.ipynb"
-          
-          if [ ! -f "$NOTEBOOK_PATH" ]; then
-            echo "Notebook not found at $NOTEBOOK_PATH"
-            exit 1
-          fi
-          
-          papermill "$NOTEBOOK_PATH" "$OUTPUT_PATH"
+          pip install --upgrade kaggle
+          sudo apt-get update && sudo apt-get install -y jq
 
-      # 6️⃣ Upload executed notebook as artifact
-      - name: Upload Notebook Artifact
+      - name: Run StockAnal Notebook
+        id: stockanal
+        run: |
+          NOTEBOOK_ID="krisler/stockanal"
+          WORKDIR="./stockanal"
+
+          echo "Cleaning old workdir..."
+          rm -rf $WORKDIR
+          mkdir -p $WORKDIR
+
+          echo "Pulling latest $NOTEBOOK_ID..."
+          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
+
+          echo "Triggering run by pushing..."
+          kaggle kernels push -p $WORKDIR
+
+          echo "Polling for completion..."
+          STATUS=""
+          while [[ "$STATUS" != *"complete"* ]]; do
+            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
+            echo "Current status: $STATUS"
+            if [[ "$STATUS" == *"error"* ]]; then
+              echo "Notebook failed!"
+              exit 1
+            fi
+            sleep 60
+          done
+
+          echo "Notebook finished. Downloading outputs..."
+          mkdir -p ./kaggle_outputs/StockAnal
+          kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/StockAnal
+
+      - name: Upload StockAnal Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StockAnal-outputs
-          path: ./output
+          path: ./kaggle_outputs/StockAnal
