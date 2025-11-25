@@ -2,7 +2,7 @@ name: Run Kaggle Notebooks Daily
 
 on:
   schedule:
-    - cron: "0 4 * * 2-6"
+    - cron: "0 4 * * 2-6"  # 9:00 PM PST = 4:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -16,49 +16,25 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Install Kaggle CLI & jq
+      - name: Setup Python & Dependencies
         run: |
-          pip install --upgrade kaggle
-          sudo apt-get update && sudo apt-get install -y jq
+          python -m pip install --upgrade pip
+          pip install --upgrade kaggle papermill nbformat
+
+      - name: Setup Kaggle JSON
+        run: |
+          mkdir -p ~/.kaggle
+          echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+          cat ~/.kaggle/kaggle.json
 
       - name: Run StockAnal Notebook
-        id: stockanal
         run: |
-          NOTEBOOK_ID="krisler/stockanal"
-          WORKDIR="./stockanal"
+          mkdir -p ./output
+          papermill ./StockAnal.ipynb ./output/StockAnal_output.ipynb
 
-          echo "Cleaning old workdir..."
-          rm -rf $WORKDIR
-          mkdir -p $WORKDIR
-
-          echo "Pulling latest $NOTEBOOK_ID..."
-          kaggle kernels pull $NOTEBOOK_ID -p $WORKDIR --metadata
-
-          echo "Triggering run by pushing..."
-          kaggle kernels push -p $WORKDIR
-
-          echo "Polling for completion..."
-          STATUS=""
-          while [[ "$STATUS" != *"complete"* ]]; do
-            STATUS=$(kaggle kernels status $NOTEBOOK_ID | grep "Status" \
-              | sed 's/Status:[[:space:]]*//; s/"//g' | tr '[:upper:]' '[:lower:]')
-
-            echo "Current status: $STATUS"
-
-            if [[ "$STATUS" == *"error"* ]]; then
-              echo "Notebook failed!"
-              exit 1
-            fi
-
-            sleep 60
-          done
-
-          echo "Notebook finished. Downloading outputs..."
-          mkdir -p ./kaggle_outputs/StockAnal
-          kaggle kernels output $NOTEBOOK_ID -p ./kaggle_outputs/StockAnal
-
-      - name: Upload StockAnal Artifact
+      - name: Upload Notebook Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StockAnal-outputs
-          path: ./kaggle_outputs/StockAnal
+          path: ./output
