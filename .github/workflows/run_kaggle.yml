@@ -17,10 +17,25 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.kaggle
-          echo "${{ secrets.KAGGLE_JSON }}" > ~/.kaggle/kaggle.json
+      
+          # Fix GitHub secrets wrapping/escaping issues automatically
+          SECRET='${{ secrets.KAGGLE_JSON }}'
+      
+          # Remove outer quotes if GitHub added them
+          if [[ "$SECRET" =~ ^\".*\"$ ]]; then
+            SECRET=${SECRET:1:-1}
+          fi
+      
+          # Convert escaped sequences (\n, \") to actual characters
+          printf "%b" "$SECRET" > ~/.kaggle/kaggle.json
+      
           chmod 600 ~/.kaggle/kaggle.json
-          echo "Kaggle JSON created:"
+          echo "Kaggle JSON final:"
           cat ~/.kaggle/kaggle.json
+      
+          echo "Testing JSON validity..."
+          jq . ~/.kaggle/kaggle.json
+
 
       - name: Install Kaggle CLI & jq
         run: |
