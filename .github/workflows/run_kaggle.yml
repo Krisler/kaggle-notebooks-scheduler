@@ -13,26 +13,44 @@ jobs:
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout Repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Debug: list files to verify notebook path
+      - name: List repo files
+        run: ls -R
+
+      # 3️⃣ Setup Python & dependencies
       - name: Setup Python & Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade kaggle papermill nbformat
 
+      # 4️⃣ Setup Kaggle credentials
       - name: Setup Kaggle JSON
         run: |
           mkdir -p ~/.kaggle
           echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
+          echo "Kaggle JSON contents:"
           cat ~/.kaggle/kaggle.json
 
+      # 5️⃣ Run the notebook using Papermill
       - name: Run StockAnal Notebook
         run: |
           mkdir -p ./output
-          papermill ./StockAnal.ipynb ./output/StockAnal_output.ipynb
+          NOTEBOOK_PATH="./StockAnal.ipynb"  # Update if your notebook is in a subfolder
+          OUTPUT_PATH="./output/StockAnal_output.ipynb"
+          
+          if [ ! -f "$NOTEBOOK_PATH" ]; then
+            echo "Notebook not found at $NOTEBOOK_PATH"
+            exit 1
+          fi
+          
+          papermill "$NOTEBOOK_PATH" "$OUTPUT_PATH"
 
+      # 6️⃣ Upload executed notebook as artifact
       - name: Upload Notebook Artifact
         uses: actions/upload-artifact@v4
         with:
